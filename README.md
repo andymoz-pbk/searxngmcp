@@ -8,7 +8,7 @@ Just download and run.
 
 ## Features
 
-**11 tools:**
+**20 tools:**
 
 | Tool | Description |
 |------|-------------|
@@ -22,6 +22,13 @@ Just download and run.
 | `base64_encode` / `base64_decode` | Base64 encoding/decoding |
 | `hash_string` | SHA-256, SHA-512, MD5 hashing |
 | `generate_random_string` | Cryptographic random strings |
+| `url_encode` / `url_decode` | URL percent-encoding/decoding |
+| `hex_encode` / `hex_decode` | Hexadecimal encoding/decoding |
+| `jwt_decode` | Decode JWT tokens (header, payload, expiry) |
+| `hash_identify` | Identify hash type (MD5, SHA-1/256/384/512, bcrypt, argon2, etc.) |
+| `xor_cipher` | XOR encode/decode with repeating key |
+| `whois_lookup` | WHOIS lookup for domains and IPs |
+| `ssl_cert_info` | SSL/TLS certificate details (issuer, expiry, SANs, fingerprint) |
 
 **Transport:** Streamable HTTP + SSE, full CORS support (echoes specific
 Origin, credentials-enabled, `Vary: Origin`), panic recovery middleware.
@@ -109,7 +116,7 @@ curl http://localhost:8000/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
 ```
 
-Returns all 11 tools. Try a search:
+Returns all 20 tools. Try a search:
 
 ```bash
 curl http://localhost:8000/mcp \
@@ -589,10 +596,11 @@ main.go        → flag parsing, config load, http.Server start (_ "time/tzdata"
 config.go      → Config struct, DefaultConfig(), LoadConfig(), env overrides
 server.go      → MCPServer (HTTP mux, SSE streams, JSON-RPC dispatch, CORS, panic recovery)
 streamable.go  → Streamable HTTP transport (/mcp endpoint)
-tools.go       → Tool definitions + handlers (search, fetch, datetime, uuid, base64, hash, random, DNS)
+tools.go       → Tool definitions + handlers (search, fetch, datetime, uuid, base64, hash, random)
 extract.go     → Mozilla Readability wrapper (go-readability v2) for smart mode content extraction
 searxng.go     → SearXNG HTTP client, SearchParams, SearXNGResponse types
 dnslookup.go   → Raw DNS wire-protocol client (UDP, no external deps)
+pentest.go     → Pentesting tools (url/hex encode/decode, jwt_decode, hash_identify, xor_cipher, whois_lookup, ssl_cert_info)
 ```
 
 - **Smart mode** — uses [go-readability v2](https://codeberg.org/readeck/go-readability) (Mozilla Readability algorithm) for main-content extraction. Falls through to regex-based full mode when readability returns <500 chars (non-article pages, SPAs).
@@ -611,8 +619,10 @@ dnslookup.go   → Raw DNS wire-protocol client (UDP, no external deps)
 go test -v -count=1 ./...
 ```
 
-143 tests covering mock DNS servers, HTML→text conversion, MCP protocol flow,
-CORS, edge cases (unicode, XSS, SSRF, redirect exhaustion, concurrent sessions).
+302 tests covering mock DNS servers, HTML→text conversion, MCP protocol flow,
+CORS, edge cases (unicode, XSS, SSRF, redirect exhaustion, concurrent sessions),
+pentesting tools (URL/hex encode/decode, JWT decode, hash identification, XOR cipher,
+WHOIS with TCP mock, SSL cert info with key size detection).
 
 ### Integration tests (require SearXNG on :8080)
 
@@ -634,6 +644,7 @@ ibm.com, google.com, google.com MX/NS/SOA, custom DNS server (8.8.8.8), and more
 | `dnslookup_test.go` | All DNS record types via mock UDP server, dedup, timeouts, very long names |
 | `dns_integration_test.go` | Real DNS resolution for production domains |
 | `integration_test.go` | Real SearXNG search, real URL fetch, fake URL error handling |
+| `pentest_test.go` | Pentesting tools: URL/hex encode/decode round-trips, JWT decode, hash identification, XOR cipher symmetry, WHOIS/SSL error handling, nil args |
 
 ---
 
@@ -659,10 +670,11 @@ timezone database (needed for scratch Docker images that have no `/usr/share/zon
 | `config.go` | Config struct, loading, env overrides |
 | `server.go` | HTTP/SSE MCP server, CORS, panic recovery |
 | `streamable.go` | Streamable HTTP transport |
-| `tools.go` | 11 tool definitions + handlers |
+| `tools.go` | Tool definitions + handlers (search, fetch, datetime, uuid, base64, hash, random) |
 | `extract.go` | Mozilla Readability wrapper (go-readability) |
 | `searxng.go` | SearXNG HTTP client |
 | `dnslookup.go` | DNS lookup (raw UDP wire protocol) |
+| `pentest.go` | Pentesting tools (url/hex encode/decode, JWT decode, hash identify, XOR cipher, WHOIS, SSL cert info) |
 | `Dockerfile` | Multi-stage scratch build (~8 MB image) |
 | `docker-compose.yml` | Docker Compose (two modes: existing or bundled SearXNG) |
 | `searxng-settings.yml` | SearXNG config override (enables JSON format) |

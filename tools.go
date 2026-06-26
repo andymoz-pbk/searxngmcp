@@ -394,6 +394,24 @@ func handleToolCall(name string, args map[string]any, cfg *Config, searxng *Sear
 		return handleRandomString(args)
 	case "dns_lookup":
 		return handleDNSLookup(args)
+	case "url_encode":
+		return handleURLEncode(args)
+	case "url_decode":
+		return handleURLDecode(args)
+	case "hex_encode":
+		return handleHexEncode(args)
+	case "hex_decode":
+		return handleHexDecode(args)
+	case "jwt_decode":
+		return handleJWTDecode(args)
+	case "hash_identify":
+		return handleHashIdentify(args)
+	case "xor_cipher":
+		return handleXorCipher(args)
+	case "whois_lookup":
+		return handleWhoisLookup(args)
+	case "ssl_cert_info":
+		return handleSSLCertInfo(args)
 	default:
 		return ToolCallResult{
 			IsError: true,

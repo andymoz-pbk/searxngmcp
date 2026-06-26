@@ -44,7 +44,7 @@ type JSONRPCError struct {
 	Data    any    `json:"data,omitempty"`
 }
 
-var toolsList = []Tool{searchTool, fetchTool, datetimeTool, newsSearchTool, fetchManyTool, uuidTool, base64EncodeTool, base64DecodeTool, hashTool, randomStringTool, dnsLookupTool}
+var toolsList = []Tool{searchTool, fetchTool, datetimeTool, newsSearchTool, fetchManyTool, uuidTool, base64EncodeTool, base64DecodeTool, hashTool, randomStringTool, dnsLookupTool, urlEncodeTool, urlDecodeTool, hexEncodeTool, hexDecodeTool, jwtDecodeTool, hashIdentifyTool, xorCipherTool, whoisLookupTool, sslCertInfoTool}
 
 func NewMCPServer(cfg *Config) *MCPServer {
 	return &MCPServer{

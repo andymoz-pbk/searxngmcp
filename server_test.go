@@ -204,8 +204,8 @@ func TestServer_ToolsList(t *testing.T) {
 				if !ok {
 					t.Fatal("tools is not an array")
 				}
-				if len(tools) != 11 {
-					t.Errorf("got %d tools, want 11", len(tools))
+				if len(tools) != 20 {
+					t.Errorf("got %d tools, want 20", len(tools))
 				}
 				break
 			}
@@ -495,8 +495,8 @@ func TestStreamableHTTP_Post_ToolsList(t *testing.T) {
 	if !ok {
 		t.Fatal("tools missing or not array")
 	}
-	if len(tools) != 11 {
-		t.Errorf("got %d tools, want 11", len(tools))
+	if len(tools) != 20 {
+		t.Errorf("got %d tools, want 20", len(tools))
 	}
 }
 

@@ -1,6 +1,6 @@
 # AGENTS.md — searxngmcp
 
-Go-based MCP server wrapping SearXNG. 11 tools over HTTP SSE + Streamable HTTP transport. Uses go-readability (Mozilla Readability) for smart content extraction. All dependencies vendored into `vendor/` for offline builds.
+Go-based MCP server wrapping SearXNG. 20 tools over HTTP SSE + Streamable HTTP transport. Uses go-readability (Mozilla Readability) for smart content extraction. All dependencies vendored into `vendor/` for offline builds.
 
 ## Build
 
@@ -29,10 +29,11 @@ main.go        → flag parsing, config load, http.Server start (_ "time/tzdata"
 config.go      → Config struct, DefaultConfig(), LoadConfig(), env overrides
 server.go      → MCPServer (HTTP mux, SSE streams, JSON-RPC dispatch, CORS, panic recovery)
 streamable.go  → Streamable HTTP transport (POST /mcp)
-tools.go       → Tool definitions + handlers (search, fetch with HTML→text/markdown, datetime, uuid, base64, hash, random, DNS lookup)
+tools.go       → Tool definitions + handlers (search, fetch with HTML→text/markdown, datetime, uuid, base64, hash, random)
 extract.go     → Mozilla Readability wrapper (go-readability v2) for smart mode content extraction
 searxng.go     → SearXNG HTTP client, SearchParams, SearXNGResponse types
 dnslookup.go   → Raw DNS wire protocol (A/AAAA/MX/NS/CNAME/TXT/SRV/PTR/SOA/ALL)
+pentest.go     → Pentesting tools (url_encode/decode, hex_encode/decode, jwt_decode, hash_identify, xor_cipher, whois_lookup, ssl_cert_info)
 ```
 
 - **SSE**: `GET /sse` opens stream, sends `event: endpoint`, receives JSON-RPC
@@ -54,6 +55,7 @@ go test -tags=integration ./...    # integration tests (requires SearXNG on :808
 `server_test.go` — full MCP flow (SSE, tools/list, tools/call, initialize, invalid JSON, CORS preflight, 404, method validation).
 `edge_test.go` — extreme/security tests: unicode/emoji/control-char queries, XSS/SQL/command injection payloads, very long queries (10k chars), SSRF attempts (internal IPs, metadata, redirect), binary/non-UTF8 content, redirect exhaustion, CRLF injection, malformed JSON-RPC, concurrent sessions, nil/wrong-type args.
 `integration_test.go` — build-tagged (`//go:build integration`), hits real SearXNG and example.com.
+`pentest_test.go` — pentesting tool tests: url/hex encode/decode round-trips, JWT decode, hash identification, XOR cipher symmetry, WHOIS/SSL error handling, nil args.
 
 ## Deploy
 
