@@ -1,7 +1,22 @@
 # searxngmcp
 
-Go MCP server wrapping SearXNG metasearch. Provides 11 tools over HTTP SSE +
-Streamable HTTP transports. Single static binary, Docker image ~8 MB.
+Go MCP server wrapping SearXNG metasearch. **Single static executable** — no
+runtime dependencies, no libraries to install. Pre-built binaries for every
+major platform:
+
+| Platform | Architecture | Binary |
+|----------|-------------|--------|
+| Linux | amd64 | `searxngmcp` |
+| Linux | arm64 | `searxngmcp` |
+| macOS | amd64 (Intel) | `searxngmcp` |
+| macOS | arm64 (Apple Silicon) | `searxngmcp` |
+| Windows | amd64 | `searxngmcp.exe` |
+| Windows | arm64 | `searxngmcp.exe` |
+
+All 6 binaries available from the [releases page](https://github.com/andymoz-pbk/searxngmcp/releases) plus a public Docker image (~8 MB).
+
+**11 tools** — search, news, web fetch (with Mozilla Readability), DNS lookup,
+datetime, UUID, base64, hashing, random strings.
 
 ---
 
@@ -17,6 +32,26 @@ docker run -d --name searxngmcp -p 8000:8000 \
 ```
 
 That's it. Server is live on `http://localhost:8000`.
+
+> **No config file needed.** The binary runs with sensible defaults out of the
+> box. A config file is optional — every setting is overridable via
+> `SEARXNGMCP_*` environment variables.
+
+### Verify it works
+
+```bash
+curl http://localhost:8000/mcp \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+Returns all 11 tools. Try a search:
+
+```bash
+curl http://localhost:8000/mcp \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"searxng_search","arguments":{"query":"hello world","max_results":3}}}'
+```
 
 ### Prerequisites
 
@@ -92,9 +127,21 @@ docker run -d --name searxngmcp -p 8000:8000 \
 
 ### Standalone binary
 
+Download the pre-built binary for your platform from the [releases page](https://github.com/andymoz-pbk/searxngmcp/releases), or grab the tarball (includes `docker-compose.yml`, `run.sh`, `install_service.sh`, config example, and all scripts):
+
 ```bash
-./run.sh
+curl -LO https://github.com/andymoz-pbk/searxngmcp/releases/download/v0.1.0/searxngmcp-dev.tar.gz
+tar xzf searxngmcp-dev.tar.gz
+chmod +x searxngmcp-dev-linux-amd64
+./searxngmcp-dev-linux-amd64
 ```
+
+> **No config file needed.** The binary runs with sensible defaults. Set
+> `SEARXNGMCP_SEARXNG_BASE_URL` to point to your SearXNG instance:
+>
+> ```bash
+> SEARXNGMCP_SEARXNG_BASE_URL=http://your-searxng:8080 ./searxngmcp-dev-linux-amd64
+> ```
 
 The `run.sh` wrapper auto-detects config from the standard search order
 (`--config` flag → `./config.json` → `/etc/searxngmcp/config.json`) and passes
@@ -169,24 +216,6 @@ install_service.bat --remove
 **Windows-specific notes:**
 - DNS lookup: uses `1.1.1.1` fallback on Windows (no `/etc/resolv.conf`). Override via `server` parameter in tool call or config file.
 - Cross-compile targets: `windows/amd64`, `windows/arm64`
-
-### 3. Test
-
-```bash
-curl http://localhost:8000/mcp \
-  -H 'Content-Type: application/json' \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
-```
-
-Should return 11 tools.
-
-```bash
-curl http://localhost:8000/mcp \
-  -H 'Content-Type: application/json' \
-  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"searxng_search","arguments":{"query":"hello world","max_results":3}}}'
-```
-
----
 
 ## SearXNG Setup
 
