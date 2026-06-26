@@ -63,8 +63,9 @@ if ! command -v go &>/dev/null; then
 else
   echo "   Go found: $(go version)"
   # Check version >= 1.23
-  GO_MAJOR=$(go version | grep -oP 'go\K[0-9]+' | head -1)
-  if [ "$GO_MAJOR" -lt 23 ]; then
+  GO_VER=$(go version | grep -oP 'go\K\d+\.\d+' | head -1)
+  GO_MINOR=$(echo "$GO_VER" | cut -d. -f2)
+  if [ "$GO_MINOR" -lt 23 ]; then
     echo "   ERROR: Go 1.23+ required (found $(go version))" >&2
     exit 1
   fi

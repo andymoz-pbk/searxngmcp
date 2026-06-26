@@ -1,7 +1,9 @@
 FROM golang:1.23-alpine AS builder
 WORKDIR /build
+COPY go.mod go.sum ./
+COPY vendor/ vendor/
 COPY . .
-RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o searxngmcp .
+RUN CGO_ENABLED=0 go build -mod=vendor -ldflags="-s -w" -o searxngmcp .
 
 FROM scratch
 COPY --from=builder /build/searxngmcp /searxngmcp

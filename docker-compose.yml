@@ -39,8 +39,8 @@ services:
     restart: unless-stopped
 
   searxngmcp:
-    build: .
-    # image: your-registry/searxngmcp:latest   # uncomment for pre-built image
+    image: ghcr.io/andymoz-pbk/searxngmcp:latest
+    # build: .                                 # uncomment to build locally
     ports:
       - "8000:8000"
     extra_hosts:

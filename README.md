@@ -77,8 +77,8 @@ The service runs as `nobody` with strict systemd hardening
 docker compose up -d
 ```
 
-Connects to your existing SearXNG at `http://host.docker.internal:8080`.
-Override:
+Uses the pre-built image `ghcr.io/andymoz-pbk/searxngmcp:latest`. Connects to
+your existing SearXNG at `http://host.docker.internal:8080`. Override:
 
 ```bash
 SEARXNGMCP_SEARXNG_BASE_URL=http://my-searxng:8080 docker compose up -d
@@ -96,11 +96,16 @@ enabled (via `searxng-settings.yml`). The MCP server connects to it internally.
 **Manual Docker** (no compose):
 
 ```bash
-docker build -t searxngmcp .
 docker run -d --name searxngmcp \
   -p 8000:8000 \
   -e SEARXNGMCP_SEARXNG_BASE_URL=http://host.docker.internal:8080 \
-  searxngmcp
+  ghcr.io/andymoz-pbk/searxngmcp:latest
+```
+
+**Build from source** (optional):
+
+```bash
+docker build -t searxngmcp .
 ```
 
 Server listens on `0.0.0.0:8000` in all cases.
