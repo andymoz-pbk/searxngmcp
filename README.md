@@ -22,20 +22,37 @@ datetime, UUID, base64, hashing, random strings.
 
 ## Quick Start
 
-> **Recommended: Docker** — fastest way to get running. Pre-built public image
-> at `ghcr.io/andymoz-pbk/searxngmcp:latest`.
+Choose your setup:
+
+### Option A — I already have SearXNG running
+
+Point the MCP server at your existing SearXNG instance:
 
 ```bash
 docker run -d --name searxngmcp -p 8000:8000 \
-  -e SEARXNGMCP_SEARXNG_BASE_URL=http://host.docker.internal:8080 \
+  -e SEARXNGMCP_SEARXNG_BASE_URL=http://your-searxng-host:8080 \
   ghcr.io/andymoz-pbk/searxngmcp:latest
 ```
 
-That's it. Server is live on `http://localhost:8000`.
+Or with docker compose (MCP server only, no SearXNG container):
 
-> **No config file needed.** The binary runs with sensible defaults out of the
-> box. A config file is optional — every setting is overridable via
-> `SEARXNGMCP_*` environment variables.
+```bash
+SEARXNGMCP_SEARXNG_BASE_URL=http://your-searxng-host:8080 docker compose up -d
+```
+
+### Option B — Install both SearXNG and MCP together
+
+One command starts both containers — zero SearXNG setup needed:
+
+```bash
+docker compose --profile searxng up -d
+```
+
+MCP server on port `8000`, SearXNG on port `8888`. The release tarballs include
+`docker-compose.yml` and `searxng-settings.yml` so this works anywhere.
+
+> **No config file needed.** Every setting is overridable via `SEARXNGMCP_*`
+> environment variables.
 
 ### Verify it works
 
@@ -51,29 +68,6 @@ Returns all 11 tools. Try a search:
 curl http://localhost:8000/mcp \
   -H 'Content-Type: application/json' \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"searxng_search","arguments":{"query":"hello world","max_results":3}}}'
-```
-
-### Prerequisites
-
-- A running SearXNG instance with `format: json` enabled (see [SearXNG Setup](#searxng-setup))
-- Go 1.23+ (to build from source) or Docker
-
-### Docker Compose (just works)
-
-**Bundled SearXNG** — zero setup, both containers start together:
-
-```bash
-docker compose --profile searxng up -d
-```
-
-That's it. MCP server on port `8000`, SearXNG on port `8888`. No config files,
-no SearXNG installation, no environment variables. The release tarballs include
-`docker-compose.yml` and `searxng-settings.yml` so this works anywhere.
-
-**With your own SearXNG** (already running on the host or remote):
-
-```bash
-SEARXNGMCP_SEARXNG_BASE_URL=http://your-searxng:8080 docker compose up -d
 ```
 
 **Build from source** (optional):
