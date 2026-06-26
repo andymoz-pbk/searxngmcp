@@ -1,8 +1,49 @@
 # searxngmcp
 
-Go MCP server wrapping SearXNG metasearch. **Single static executable** — no
-runtime dependencies, no libraries to install. Pre-built binaries for every
-major platform:
+Go MCP server wrapping SearXNG metasearch — giving your AI coding tools direct
+access to web search, news, content fetching, DNS lookups, and more.
+
+**Single static binary**. No runtime dependencies. No libraries to install.
+Just download and run.
+
+## Features
+
+**11 tools:**
+
+| Tool | Description |
+|------|-------------|
+| `searxng_search` | Web search via SearXNG metasearch |
+| `searxng_search_news` | News search |
+| `searxng_fetch` | Fetch any URL (text, markdown, HTML, raw) with Mozilla Readability smart mode |
+| `searxng_fetch_many` | Fetch multiple URLs concurrently |
+| `dns_lookup` | Raw DNS queries (A/AAAA/MX/NS/CNAME/TXT/SRV/PTR/SOA) |
+| `get_datetime` | Current date/time with timezone support |
+| `generate_uuid` | Cryptographic UUID v4 |
+| `base64_encode` / `base64_decode` | Base64 encoding/decoding |
+| `hash_string` | SHA-256, SHA-512, MD5 hashing |
+| `generate_random_string` | Cryptographic random strings |
+
+**Transport:** Streamable HTTP + SSE, full CORS support (echoes specific
+Origin, credentials-enabled, `Vary: Origin`), panic recovery middleware.
+
+**Content extraction:** `mode: "smart"` uses Mozilla Readability (same
+algorithm as Firefox Reader View) to extract main content, stripping nav,
+sidebars, and ads. `mode: "full"` returns cleaned page content.
+
+**Connection metadata:** Every fetch response includes remote/local addresses,
+DNS results, TLS details, redirect chain, and external resources.
+
+## Running
+
+| Method | Command |
+|--------|---------|
+| **Docker (existing SearXNG)** | `docker run -d --name searxngmcp -p 8000:8000 -e SEARXNGMCP_SEARXNG_BASE_URL=http://YOUR-IP:8080 ghcr.io/andymoz-pbk/searxngmcp:latest` |
+| **Docker Compose (bundled SearXNG)** | `docker compose --profile searxng up -d` |
+| **Standalone binary** | `./searxngmcp-v1.0.0-linux-amd64` |
+| **systemd service** | `sudo ./install_service.sh` |
+| **Windows Service** | `install_service.bat` (NSSM) |
+
+**Pre-built binaries** for every platform:
 
 | Platform | Architecture | Binary |
 |----------|-------------|--------|
@@ -13,10 +54,16 @@ major platform:
 | Windows | amd64 | `searxngmcp-v1.0.0-windows-amd64.exe` |
 | Windows | arm64 | `searxngmcp-v1.0.0-windows-arm64.exe` |
 
-All 6 binaries available from the [releases page](https://github.com/andymoz-pbk/searxngmcp/releases) plus a public Docker image (~8 MB).
+All 6 binaries + `docker-compose.yml` + `searxng-settings.yml` + all scripts
+in the [release tarball](https://github.com/andymoz-pbk/searxngmcp/releases).
+Extract the tarball anywhere and run `docker compose --profile searxng up -d`
+for a fully self-contained setup with both MCP server and SearXNG.
 
-**11 tools** — search, news, web fetch (with Mozilla Readability), DNS lookup,
-datetime, UUID, base64, hashing, random strings.
+**Docker image:** `ghcr.io/andymoz-pbk/searxngmcp:latest` (~8 MB, scratch
+base).
+
+> **No config file needed.** Every setting is overridable via `SEARXNGMCP_*`
+> environment variables. Config file is optional.
 
 ---
 
