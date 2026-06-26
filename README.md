@@ -90,67 +90,63 @@ The MCP server exposes two transport options on port `8000`:
 
 | Transport | Endpoint | Description |
 |-----------|----------|-------------|
-| Streamable HTTP | `http://localhost:8000/mcp` | JSON-RPC over HTTP (simplest) |
-| SSE | `http://localhost:8000/sse` | Server-Sent Events (streaming) |
+| Streamable HTTP | `http://localhost:8000/mcp` | JSON-RPC over HTTP (recommended) |
+| SSE | `http://localhost:8000/sse` | Server-Sent Events (legacy) |
 
 **opencode** (`~/.config/opencode/opencode.json`):
 ```json
 {
-  "mcpServers": {
-    "searxng": {
-      "transport": "http",
-      "url": "http://localhost:8000/mcp"
-    }
-  }
-}
-```
-
-**Claude Code** (`.mcp.json`):
-```json
-{
-  "mcpServers": {
-    "searxng": {
-      "transport": "http",
-      "url": "http://localhost:8000/mcp"
-    }
-  }
-}
-```
-
-Or with SSE:
-```json
-{
-  "mcpServers": {
-    "searxng": {
-      "transport": "sse",
-      "url": "http://localhost:8000/sse"
-    }
-  }
-}
-```
-```
-
-**Cline** (`cline_mcp_settings.json`):
-```json
-{
-  "mcpServers": {
-    "searxng": {
-      "transportType": "http",
-      "endpoint": "http://localhost:8000/mcp"
-    }
-  }
-}
-```
-
-**GitHub Copilot / Codex** (`.github/copilot-instructions.md` or settings):
-Add the MCP server URL `http://localhost:8000/mcp` to your Codex CLI config:
-```json
-{
   "mcp": {
-    "servers": {
-      "searxng": {
-        "url": "http://localhost:8000/mcp"
-      }
+    "searxng": {
+      "type": "remote",
+      "url": "http://localhost:8000/mcp"
+    }
+  }
+}
+```
+
+**Claude Code** — CLI:
+```bash
+claude mcp add --transport http searxng http://localhost:8000/mcp
+```
+
+Or `.mcp.json`:
+```json
+{
+  "mcpServers": {
+    "searxng": {
+      "type": "http",
+      "url": "http://localhost:8000/mcp"
+    }
+  }
+}
+```
+
+**Cline** (`~/.cline/mcp.json`):
+```json
+{
+  "mcpServers": {
+    "searxng": {
+      "type": "streamableHttp",
+      "url": "http://localhost:8000/mcp"
+    }
+  }
+}
+```
+
+**GitHub Copilot CLI** — CLI:
+```bash
+copilot mcp add --transport http searxng http://localhost:8000/mcp
+```
+
+Or `~/.copilot/mcp-config.json`:
+```json
+{
+  "mcpServers": {
+    "searxng": {
+      "type": "http",
+      "url": "http://localhost:8000/mcp",
+      "tools": ["*"]
     }
   }
 }
