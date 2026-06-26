@@ -26,18 +26,18 @@ Choose your setup:
 
 ### Option A — I already have SearXNG running
 
-Point the MCP server at your existing SearXNG instance:
+Point the MCP server at your existing SearXNG instance (use its IP or hostname):
 
 ```bash
 docker run -d --name searxngmcp -p 8000:8000 \
-  -e SEARXNGMCP_SEARXNG_BASE_URL=http://your-searxng-host:8080 \
+  -e SEARXNGMCP_SEARXNG_BASE_URL=http://YOUR-SEARXNG-IP:8080 \
   ghcr.io/andymoz-pbk/searxngmcp:latest
 ```
 
 Or with docker compose (MCP server only, no SearXNG container):
 
 ```bash
-SEARXNGMCP_SEARXNG_BASE_URL=http://your-searxng-host:8080 docker compose up -d
+SEARXNGMCP_SEARXNG_BASE_URL=http://YOUR-SEARXNG-IP:8080 docker compose up -d
 ```
 
 ### Option B — Install both SearXNG and MCP together
@@ -149,35 +149,6 @@ Or `~/.copilot/mcp-config.json`:
 > **Running on a remote machine?** Replace `localhost` with your server's IP or
 > hostname. The server binds to `0.0.0.0` by default, so it accepts connections
 > from any interface.
-
-### Docker networking
-
-The `host.docker.internal` hostname resolves to your host machine's IP from
-inside a container (Docker Desktop and Docker Engine 20.10+ with
-`extra_hosts`). If it doesn't work, use one of these alternatives:
-
-**Remote SearXNG** (most common):
-```bash
-docker run -d --name searxngmcp -p 8000:8000 \
-  -e SEARXNGMCP_SEARXNG_BASE_URL=http://your-server-ip:8080 \
-  ghcr.io/andymoz-pbk/searxngmcp:latest
-```
-
-**SearXNG on the Docker host** (Linux without `host.docker.internal`):
-```bash
-docker run -d --name searxngmcp -p 8000:8000 \
-  --network host \
-  -e SEARXNGMCP_SEARXNG_BASE_URL=http://127.0.0.1:8080 \
-  ghcr.io/andymoz-pbk/searxngmcp:latest
-```
-
-**SearXNG on the Docker host** (using `--add-host`):
-```bash
-docker run -d --name searxngmcp -p 8000:8000 \
-  --add-host=host.docker.internal:host-gateway \
-  -e SEARXNGMCP_SEARXNG_BASE_URL=http://host.docker.internal:8080 \
-  ghcr.io/andymoz-pbk/searxngmcp:latest
-```
 
 ---
 
