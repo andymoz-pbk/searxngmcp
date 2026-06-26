@@ -26,6 +26,12 @@ That's it. Server is live on `http://localhost:8000`.
 ### Docker Compose
 
 **With an existing SearXNG instance** (default — MCP server only):
+
+```bash
+docker compose up -d
+```
+
+Uses the pre-built image `ghcr.io/andymoz-pbk/searxngmcp:latest`. Connects to
 your existing SearXNG at `http://host.docker.internal:8080`. Override:
 
 ```bash
@@ -38,17 +44,10 @@ SEARXNGMCP_SEARXNG_BASE_URL=http://my-searxng:8080 docker compose up -d
 docker compose --profile searxng up -d
 ```
 
-The bundled SearXNG listens on port `8888`, pre-configured with JSON format
-enabled (via `searxng-settings.yml`). The MCP server connects to it internally.
-
-**With a bundled SearXNG** (starts both MCP server and SearXNG):
-
-```bash
-docker compose --profile searxng up -d
-```
-
-The bundled SearXNG listens on port `8888`, pre-configured with JSON format
-enabled (via `searxng-settings.yml`). The MCP server connects to it internally.
+This starts both containers: the MCP server and a pre-configured SearXNG
+instance (JSON format enabled, exposed on port `8888`). The release tarballs
+include `docker-compose.yml` and `searxng-settings.yml` so you can run this
+anywhere without needing SearXNG installed separately.
 
 **Build from source** (optional):
 
@@ -57,6 +56,35 @@ docker build -t searxngmcp .
 ```
 
 Server listens on `0.0.0.0:8000` in all cases.
+
+### Docker networking
+
+The `host.docker.internal` hostname resolves to your host machine's IP from
+inside a container (Docker Desktop and Docker Engine 20.10+ with
+`extra_hosts`). If it doesn't work, use one of these alternatives:
+
+**Remote SearXNG** (most common):
+```bash
+docker run -d --name searxngmcp -p 8000:8000 \
+  -e SEARXNGMCP_SEARXNG_BASE_URL=http://your-server-ip:8080 \
+  ghcr.io/andymoz-pbk/searxngmcp:latest
+```
+
+**SearXNG on the Docker host** (Linux without `host.docker.internal`):
+```bash
+docker run -d --name searxngmcp -p 8000:8000 \
+  --network host \
+  -e SEARXNGMCP_SEARXNG_BASE_URL=http://127.0.0.1:8080 \
+  ghcr.io/andymoz-pbk/searxngmcp:latest
+```
+
+**SearXNG on the Docker host** (using `--add-host`):
+```bash
+docker run -d --name searxngmcp -p 8000:8000 \
+  --add-host=host.docker.internal:host-gateway \
+  -e SEARXNGMCP_SEARXNG_BASE_URL=http://host.docker.internal:8080 \
+  ghcr.io/andymoz-pbk/searxngmcp:latest
+```
 
 ---
 

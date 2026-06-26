@@ -9,8 +9,8 @@
 #      SEARXNGMCP_SEARXNG_URL=http://my-searxng:8080 docker compose up -d
 #
 # 2. Launch a BUNDLED SearXNG (auto-configured with JSON format):
-#      SEARXNGMCP_SEARXNG_URL=http://searxng:8080 docker compose --profile searxng up -d
-#    The bundled instance listens on port 8888.
+#      docker compose --profile searxng up -d
+#    The bundled instance listens on port 8888, MCP on 8000.
 #
 # All SEARXNGMCP_* env vars:
 #
@@ -33,7 +33,7 @@ services:
     profiles: ["searxng"]
     image: searxng/searxng:latest
     ports:
-      - "8888:8080"
+      - "0.0.0.0:8888:8080"
     volumes:
       - ./searxng-settings.yml:/etc/searxng/settings.yml
     restart: unless-stopped
@@ -42,7 +42,7 @@ services:
     image: ghcr.io/andymoz-pbk/searxngmcp:latest
     # build: .                                 # uncomment to build locally
     ports:
-      - "8000:8000"
+      - "0.0.0.0:8000:8000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
