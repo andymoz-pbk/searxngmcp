@@ -110,8 +110,8 @@ The MCP server exposes two transport options on port `8000`:
 {
   "mcpServers": {
     "searxng": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-flowey", "http://localhost:8000/mcp"]
+      "transport": "http",
+      "url": "http://localhost:8000/mcp"
     }
   }
 }
@@ -122,11 +122,12 @@ Or with SSE:
 {
   "mcpServers": {
     "searxng": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-flowey", "--sse", "http://localhost:8000/sse"]
+      "transport": "sse",
+      "url": "http://localhost:8000/sse"
     }
   }
 }
+```
 ```
 
 **Cline** (`cline_mcp_settings.json`):
