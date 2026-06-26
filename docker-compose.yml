@@ -2,15 +2,15 @@
 #
 # Two modes:
 #
-# 1. Use an EXISTING SearXNG instance (e.g. one already running on the host):
-#      docker compose up -d
-#    The MCP server connects to http://host.docker.internal:8080 (your host's
-#    SearXNG).  Override with:
-#      SEARXNGMCP_SEARXNG_URL=http://my-searxng:8080 docker compose up -d
-#
-# 2. Launch a BUNDLED SearXNG (auto-configured with JSON format):
+# 1. Launch a BUNDLED SearXNG (auto-configured with JSON format):
 #      docker compose --profile searxng up -d
-#    The bundled instance listens on port 8888, MCP on 8000.
+#    The bundled SearXNG listens on port 8888, MCP on 8000.
+#    MCP connects to SearXNG internally via Docker network.
+#
+# 2. Use an EXISTING SearXNG instance (e.g. one already running on the host):
+#      SEARXNGMCP_SEARXNG_URL=http://host.docker.internal:8080 docker compose up -d
+#    Or with a remote SearXNG:
+#      SEARXNGMCP_SEARXNG_URL=http://your-searxng-server:8080 docker compose up -d
 #
 # All SEARXNGMCP_* env vars:
 #
@@ -46,7 +46,9 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     environment:
-      - SEARXNGMCP_SEARXNG_BASE_URL=${SEARXNGMCP_SEARXNG_URL:-http://host.docker.internal:8080}
+      - SEARXNGMCP_SEARXNG_BASE_URL=${SEARXNGMCP_SEARXNG_URL:-http://searxng:8080}
       - SEARXNGMCP_SERVER_HOST=0.0.0.0
       - SEARXNGMCP_SERVER_PORT=8000
+    depends_on:
+      - searxng
     restart: unless-stopped

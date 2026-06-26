@@ -1,4 +1,6 @@
 use_default_settings: true
+server:
+  secret_key: "searxngmcp-bundled-secret-key-change-me-in-production"
 search:
   formats:
     - html
