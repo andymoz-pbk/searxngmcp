@@ -58,31 +58,23 @@ curl http://localhost:8000/mcp \
 - A running SearXNG instance with `format: json` enabled (see [SearXNG Setup](#searxng-setup))
 - Go 1.23+ (to build from source) or Docker
 
-### Docker Compose
+### Docker Compose (just works)
 
-**With an existing SearXNG instance** (default — MCP server only):
-
-```bash
-docker compose up -d
-```
-
-Uses the pre-built image `ghcr.io/andymoz-pbk/searxngmcp:latest`. Connects to
-your existing SearXNG at `http://host.docker.internal:8080`. Override:
-
-```bash
-SEARXNGMCP_SEARXNG_BASE_URL=http://my-searxng:8080 docker compose up -d
-```
-
-**With a bundled SearXNG** (starts both MCP server and SearXNG):
+**Bundled SearXNG** — zero setup, both containers start together:
 
 ```bash
 docker compose --profile searxng up -d
 ```
 
-This starts both containers: the MCP server and a pre-configured SearXNG
-instance (JSON format enabled, exposed on port `8888`). The release tarballs
-include `docker-compose.yml` and `searxng-settings.yml` so you can run this
-anywhere without needing SearXNG installed separately.
+That's it. MCP server on port `8000`, SearXNG on port `8888`. No config files,
+no SearXNG installation, no environment variables. The release tarballs include
+`docker-compose.yml` and `searxng-settings.yml` so this works anywhere.
+
+**With your own SearXNG** (already running on the host or remote):
+
+```bash
+SEARXNGMCP_SEARXNG_BASE_URL=http://your-searxng:8080 docker compose up -d
+```
 
 **Build from source** (optional):
 
@@ -91,6 +83,81 @@ docker build -t searxngmcp .
 ```
 
 Server listens on `0.0.0.0:8000` in all cases.
+
+### Connect your AI tool
+
+The MCP server exposes two transport options on port `8000`:
+
+| Transport | Endpoint | Description |
+|-----------|----------|-------------|
+| Streamable HTTP | `http://localhost:8000/mcp` | JSON-RPC over HTTP (simplest) |
+| SSE | `http://localhost:8000/sse` | Server-Sent Events (streaming) |
+
+**opencode** (`~/.config/opencode/opencode.json`):
+```json
+{
+  "mcpServers": {
+    "searxng": {
+      "transport": "http",
+      "url": "http://localhost:8000/mcp"
+    }
+  }
+}
+```
+
+**Claude Code** (`.mcp.json`):
+```json
+{
+  "mcpServers": {
+    "searxng": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-flowey", "http://localhost:8000/mcp"]
+    }
+  }
+}
+```
+
+Or with SSE:
+```json
+{
+  "mcpServers": {
+    "searxng": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-flowey", "--sse", "http://localhost:8000/sse"]
+    }
+  }
+}
+```
+
+**Cline** (`cline_mcp_settings.json`):
+```json
+{
+  "mcpServers": {
+    "searxng": {
+      "transportType": "http",
+      "endpoint": "http://localhost:8000/mcp"
+    }
+  }
+}
+```
+
+**GitHub Copilot / Codex** (`.github/copilot-instructions.md` or settings):
+Add the MCP server URL `http://localhost:8000/mcp` to your Codex CLI config:
+```json
+{
+  "mcp": {
+    "servers": {
+      "searxng": {
+        "url": "http://localhost:8000/mcp"
+      }
+    }
+  }
+}
+```
+
+> **Running on a remote machine?** Replace `localhost` with your server's IP or
+> hostname. The server binds to `0.0.0.0` by default, so it accepts connections
+> from any interface.
 
 ### Docker networking
 
