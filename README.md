@@ -7,31 +7,62 @@ Streamable HTTP transports. Single static binary, Docker image ~8 MB.
 
 ## Quick Start
 
+> **Recommended: Docker** — fastest way to get running. Pre-built public image
+> at `ghcr.io/andymoz-pbk/searxngmcp:latest`.
+
+```bash
+docker run -d --name searxngmcp -p 8000:8000 \
+  -e SEARXNGMCP_SEARXNG_BASE_URL=http://host.docker.internal:8080 \
+  ghcr.io/andymoz-pbk/searxngmcp:latest
+```
+
+That's it. Server is live on `http://localhost:8000`.
+
 ### Prerequisites
 
 - A running SearXNG instance with `format: json` enabled (see [SearXNG Setup](#searxng-setup))
-- Go 1.23+ (to build) or Docker
+- Go 1.23+ (to build from source) or Docker
 
-### 1. Build
+### Docker Compose
 
-```bash
-go mod tidy
-go mod vendor                    # vendor deps for offline builds
-CGO_ENABLED=0 go build -ldflags="-s -w" -o searxngmcp .
-```
-
-Or use the release script (checks Go installation, tidies, vendors, tests, builds, creates tarball):
+**With an existing SearXNG instance** (default — MCP server only):
+your existing SearXNG at `http://host.docker.internal:8080`. Override:
 
 ```bash
-./release.sh                     # full release build
-./release.sh --no-test           # skip tests
-./release.sh --docker            # also build Docker image
-./release.sh --version v1.0.0   # tag the release
+SEARXNGMCP_SEARXNG_BASE_URL=http://my-searxng:8080 docker compose up -d
 ```
 
-### 2. Run (three options)
+**With a bundled SearXNG** (starts both MCP server and SearXNG):
 
-#### Option A — Standalone script
+```bash
+docker compose --profile searxng up -d
+```
+
+The bundled SearXNG listens on port `8888`, pre-configured with JSON format
+enabled (via `searxng-settings.yml`). The MCP server connects to it internally.
+
+**With a bundled SearXNG** (starts both MCP server and SearXNG):
+
+```bash
+docker compose --profile searxng up -d
+```
+
+The bundled SearXNG listens on port `8888`, pre-configured with JSON format
+enabled (via `searxng-settings.yml`). The MCP server connects to it internally.
+
+**Build from source** (optional):
+
+```bash
+docker build -t searxngmcp .
+```
+
+Server listens on `0.0.0.0:8000` in all cases.
+
+---
+
+## Other Deployment Options
+
+### Standalone binary
 
 ```bash
 ./run.sh
@@ -48,7 +79,7 @@ You can also run the binary directly:
 ./searxngmcp --config /path/to/config.json   # explicit config path
 ```
 
-#### Option B — systemd service
+### systemd service
 
 ```bash
 sudo ./install_service.sh              # build + install + enable + start
@@ -69,48 +100,7 @@ journalctl -u searxngmcp -f             # view logs
 The service runs as `nobody` with strict systemd hardening
 (`ProtectSystem=strict`, `PrivateTmp`, `NoNewPrivileges`, etc.).
 
-#### Option C — Docker
-
-**With an existing SearXNG instance** (default — MCP server only):
-
-```bash
-docker compose up -d
-```
-
-Uses the pre-built image `ghcr.io/andymoz-pbk/searxngmcp:latest`. Connects to
-your existing SearXNG at `http://host.docker.internal:8080`. Override:
-
-```bash
-SEARXNGMCP_SEARXNG_BASE_URL=http://my-searxng:8080 docker compose up -d
-```
-
-**With a bundled SearXNG** (starts both MCP server and SearXNG):
-
-```bash
-docker compose --profile searxng up -d
-```
-
-The bundled SearXNG listens on port `8888`, pre-configured with JSON format
-enabled (via `searxng-settings.yml`). The MCP server connects to it internally.
-
-**Manual Docker** (no compose):
-
-```bash
-docker run -d --name searxngmcp \
-  -p 8000:8000 \
-  -e SEARXNGMCP_SEARXNG_BASE_URL=http://host.docker.internal:8080 \
-  ghcr.io/andymoz-pbk/searxngmcp:latest
-```
-
-**Build from source** (optional):
-
-```bash
-docker build -t searxngmcp .
-```
-
-Server listens on `0.0.0.0:8000` in all cases.
-
-#### Option D — Windows
+### Windows
 
 **Manual run:**
 
