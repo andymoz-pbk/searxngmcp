@@ -6,12 +6,12 @@ major platform:
 
 | Platform | Architecture | Binary |
 |----------|-------------|--------|
-| Linux | amd64 | `searxngmcp` |
-| Linux | arm64 | `searxngmcp` |
-| macOS | amd64 (Intel) | `searxngmcp` |
-| macOS | arm64 (Apple Silicon) | `searxngmcp` |
-| Windows | amd64 | `searxngmcp.exe` |
-| Windows | arm64 | `searxngmcp.exe` |
+| Linux | amd64 | `searxngmcp-v1.0.0-linux-amd64` |
+| Linux | arm64 | `searxngmcp-v1.0.0-linux-arm64` |
+| macOS | amd64 (Intel) | `searxngmcp-v1.0.0-darwin-amd64` |
+| macOS | arm64 (Apple Silicon) | `searxngmcp-v1.0.0-darwin-arm64` |
+| Windows | amd64 | `searxngmcp-v1.0.0-windows-amd64.exe` |
+| Windows | arm64 | `searxngmcp-v1.0.0-windows-arm64.exe` |
 
 All 6 binaries available from the [releases page](https://github.com/andymoz-pbk/searxngmcp/releases) plus a public Docker image (~8 MB).
 
@@ -130,17 +130,17 @@ docker run -d --name searxngmcp -p 8000:8000 \
 Download the pre-built binary for your platform from the [releases page](https://github.com/andymoz-pbk/searxngmcp/releases), or grab the tarball (includes `docker-compose.yml`, `run.sh`, `install_service.sh`, config example, and all scripts):
 
 ```bash
-curl -LO https://github.com/andymoz-pbk/searxngmcp/releases/download/v0.1.0/searxngmcp-dev.tar.gz
-tar xzf searxngmcp-dev.tar.gz
-chmod +x searxngmcp-dev-linux-amd64
-./searxngmcp-dev-linux-amd64
+curl -LO https://github.com/andymoz-pbk/searxngmcp/releases/download/v1.0.0/searxngmcp-v1.0.0.tar.gz
+tar xzf searxngmcp-v1.0.0.tar.gz
+chmod +x searxngmcp-v1.0.0-linux-amd64
+./searxngmcp-v1.0.0-linux-amd64
 ```
 
 > **No config file needed.** The binary runs with sensible defaults. Set
 > `SEARXNGMCP_SEARXNG_BASE_URL` to point to your SearXNG instance:
 >
 > ```bash
-> SEARXNGMCP_SEARXNG_BASE_URL=http://your-searxng:8080 ./searxngmcp-dev-linux-amd64
+> SEARXNGMCP_SEARXNG_BASE_URL=http://your-searxng:8080 ./searxngmcp-v1.0.0-linux-amd64
 > ```
 
 The `run.sh` wrapper auto-detects config from the standard search order
