@@ -1,0 +1,11 @@
+*.o
+*.test
+searxngmcp
+searxngmcp-*-*
+searxngmcp.exe
+*.tar.gz
+opencode.json*
+deploy/
+.git/
+*_test.go
+*.bat

@@ -1,0 +1,54 @@
+# ─── Secrets and credentials ──────────────────────────────────────
+# Never commit real config with tokens, passwords, or API keys
+config.json
+*.env
+.env
+.env.*
+secrets*
+*.key
+*.pem
+*.pfx
+*.p12
+*.crt
+
+# ─── AI assistant configs (may contain personal preferences/keys) ─
+.opencode/
+opencode.json
+opencode.jsonc
+.claude/
+.aider*
+
+# ─── Built binaries and executables ──────────────────────────────
+searxngmcp
+searxngmcp.exe
+searxngmcp-*-*
+*.exe
+
+# ─── Build artifacts and packages ────────────────────────────────
+*.tar.gz
+*.zip
+deploy/
+
+# ─── Go build/test artifacts ─────────────────────────────────────
+*.o
+*.test
+*.out
+coverage.out
+coverage.html
+
+# ─── OS/editor noise ────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+~$*
+
+# ─── Logs and runtime data ──────────────────────────────────────
+*.log
+searxngmcp.log
+
+# ─── NSSM (downloaded by install_service.bat) ───────────────────
+nssm.exe
+nssm.zip
+nssm-extract/

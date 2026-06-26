@@ -1,0 +1,26 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8000
+  },
+  "searxng": {
+    "base_url": "http://localhost:8080",
+    "timeout": 30
+  },
+  "search": {
+    "default_max_results": 10,
+    "max_max_results": 50,
+    "default_categories": "general",
+    "default_language": "",
+    "default_safesearch": 0
+  },
+  "fetch": {
+    "max_content_length": 1048576,
+    "timeout": 30,
+    "user_agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+    "max_concurrent": 5
+  },
+  "logging": {
+    "level": "info"
+  }
+}
