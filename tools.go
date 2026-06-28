@@ -268,7 +268,7 @@ var randomStringTool = Tool{
 		Properties: map[string]PropertyDef{
 			"length": {
 				Type:        "number",
-				Description: "Length of the random string",
+				Description: "Length of the random string (max 4096; warning returned if capped)",
 				Default:     16,
 			},
 			"charset": {

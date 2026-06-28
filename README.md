@@ -520,7 +520,7 @@ Cryptographically secure random string.
 
 | Parameter | Type | Required | Default | Description |
 |-----------|------|----------|---------|-------------|
-| `length` | number | no | `16` | Length (max `4096`) |
+| `length` | number | no | `16` | Length (max `4096`; warning returned if capped) |
 | `charset` | string | no | `alphanumeric` | `alphanumeric`, `alphabetic`, `numeric`, `hex`, `ascii` |
 
 ### dns_lookup
