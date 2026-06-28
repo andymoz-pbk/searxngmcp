@@ -1109,8 +1109,11 @@ func handleRandomString(args map[string]any) ToolCallResult {
 	if v, ok := args["length"].(float64); ok && v > 0 {
 		length = int(v)
 	}
+	requestedLength := length
+	capped := false
 	if length > 4096 {
 		length = 4096
+		capped = true
 	}
 
 	charset, _ := args["charset"].(string)
@@ -1138,8 +1141,12 @@ func handleRandomString(args map[string]any) ToolCallResult {
 		result[i] = chars[n.Int64()]
 	}
 
+	text := string(result)
+	if capped {
+		text = fmt.Sprintf("truncated to 4096 (requested %d)\n%s", requestedLength, text)
+	}
 	return ToolCallResult{
-		Content: []ContentItem{{Type: "text", Text: string(result)}},
+		Content: []ContentItem{{Type: "text", Text: text}},
 	}
 }
 

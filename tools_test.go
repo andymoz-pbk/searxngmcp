@@ -910,8 +910,14 @@ func TestTools_RandomString_MaxLength(t *testing.T) {
 	if result.IsError {
 		t.Fatalf("unexpected error: %s", result.Content[0].Text)
 	}
-	if len(result.Content[0].Text) != 4096 {
-		t.Errorf("length = %d, want 4096 (max)", len(result.Content[0].Text))
+	text := result.Content[0].Text
+	if !strings.HasPrefix(text, "truncated to 4096 (requested 5000)") {
+		t.Errorf("expected truncation warning, got: %q", text)
+	}
+	// The random string portion (after warning + newline) should be 4096
+	parts := strings.SplitN(text, "\n", 2)
+	if len(parts) != 2 || len(parts[1]) != 4096 {
+		t.Errorf("random string length = %d, want 4096", len(parts[1]))
 	}
 }
 
