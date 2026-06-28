@@ -8,11 +8,13 @@
 #    MCP connects to SearXNG internally via Docker network.
 #
 # 2. Use an EXISTING SearXNG instance (e.g. one already running on the host):
-#      SEARXNGMCP_SEARXNG_URL=http://YOUR-SEARXNG-IP:8080 docker compose up -d
+#      SEARXNGMCP_SEARXNG_URL=http://YOUR-HOST-IP:8080 docker compose up -d
+#    The MCP container needs to reach your SearXNG. Use your host's LAN IP
+#    (not localhost/127.0.0.1 — those don't work from inside a container).
 #
 # All SEARXNGMCP_* env vars:
 #
-#   SEARXNGMCP_SEARXNG_BASE_URL          searxng.base_url          (default: http://localhost:8080)
+#   SEARXNGMCP_SEARXNG_BASE_URL          searxng.base_url          (default: http://searxng:8080)
 #   SEARXNGMCP_SEARXNG_TIMEOUT           searxng.timeout           (default: 30)
 #   SEARXNGMCP_SERVER_HOST               server.host               (default: 0.0.0.0)
 #   SEARXNGMCP_SERVER_PORT               server.port               (default: 8000)
