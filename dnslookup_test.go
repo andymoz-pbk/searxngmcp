@@ -3,11 +3,13 @@ package main
 import (
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 )
 
 func buildDNSResponse(query []byte, rtype uint16, rdata []byte, ttl uint32) []byte {
@@ -19,6 +21,7 @@ func buildDNSResponse(query []byte, rtype uint16, rdata []byte, ttl uint32) []by
 	header[2] = 0x84
 	header[3] = 0x80
 	binary.BigEndian.PutUint16(header[6:8], 1)
+	binary.BigEndian.PutUint16(header[10:12], 0)
 	qnameStart := 12
 	qnameEnd := qnameStart
 	for {
@@ -328,7 +331,12 @@ func TestDNSLookup_ALL_Mode(t *testing.T) {
 		return b
 	}
 	server, port := mockUDPServer(t, func(q []byte) []byte {
-		rtype := binary.BigEndian.Uint16(q[len(q)-4 : len(q)-2])
+		qtypeOff := 12
+		for qtypeOff < len(q) && q[qtypeOff] != 0 {
+			qtypeOff += int(q[qtypeOff]) + 1
+		}
+		qtypeOff++
+		rtype := binary.BigEndian.Uint16(q[qtypeOff : qtypeOff+2])
 		switch rtype {
 		case 1:
 			return buildDNSResponse(q, 1, net.ParseIP("1.2.3.4").To4(), 300)
@@ -352,6 +360,7 @@ func TestDNSLookup_ALL_Mode(t *testing.T) {
 			copy(r, q[:12])
 			r[2] = 0x84
 			r[3] = 0x80
+			binary.BigEndian.PutUint16(r[10:12], 0)
 			return r
 		}
 	})
@@ -512,7 +521,7 @@ func TestReverseName_Invalid(t *testing.T) {
 }
 
 func TestParseDNSResponse_Truncated(t *testing.T) {
-	_, err := parseDNSResponse([]byte{0, 0, 0, 0})
+	_, _, err := parseDNSResponse([]byte{0, 0, 0, 0})
 	if err == nil {
 		t.Fatal("expected error for truncated response")
 	}
@@ -522,7 +531,7 @@ func TestParseDNSResponse_ServerFailure(t *testing.T) {
 	data := []byte{
 		0, 0, 0x84, 0x02, 0, 1, 0, 0, 0, 0, 0, 0,
 	}
-	_, err := parseDNSResponse(data)
+	_, _, err := parseDNSResponse(data)
 	if err == nil {
 		t.Fatal("expected error for server failure")
 	}
@@ -628,11 +637,11 @@ func TestDNSLookup_ResolveRawQuery(t *testing.T) {
 	if len(q) < 12 {
 		t.Fatal("query too short")
 	}
-	qtype := binary.BigEndian.Uint16(q[len(q)-4 : len(q)-2])
+	qtype := binary.BigEndian.Uint16(q[len(q)-15 : len(q)-13])
 	if qtype != 1 {
 		t.Errorf("qtype = %d, want 1", qtype)
 	}
-	qname := q[12 : len(q)-4]
+	qname := q[12 : len(q)-15]
 	if qname[len(qname)-1] != 0 {
 		t.Errorf("query name missing trailing null")
 	}
@@ -656,5 +665,144 @@ func TestDNSLookup_RepeatedServerFallback(t *testing.T) {
 	}
 	if len(records) != 1 || records[0].Value != "10.0.0.1" {
 		t.Errorf("unexpected result: %+v", records)
+	}
+}
+
+func TestBuildQuery_ContainsEDNS0(t *testing.T) {
+	q := buildQuery("example.com", 1)
+	if len(q) < 23 {
+		t.Fatal("query too short for EDNS0")
+	}
+	opt := q[len(q)-11:]
+	if opt[0] != 0 {
+		t.Errorf("OPT name should be root (0x00), got 0x%02x", opt[0])
+	}
+	optType := binary.BigEndian.Uint16(opt[1:3])
+	if optType != 41 {
+		t.Errorf("OPT type should be 41, got %d", optType)
+	}
+	payloadSize := binary.BigEndian.Uint16(opt[3:5])
+	if payloadSize != 4096 {
+		t.Errorf("OPT payload size should be 4096, got %d", payloadSize)
+	}
+	arcount := binary.BigEndian.Uint16(q[10:12])
+	if arcount != 1 {
+		t.Errorf("ARCOUNT should be 1, got %d", arcount)
+	}
+}
+
+func TestParseDNSResponse_TCBit(t *testing.T) {
+	q := buildQuery("example.com", 1)
+	data := make([]byte, 12, 12+len(q)-12)
+	copy(data, q[:12])
+	data[2] = 0x88
+	data = append(data, q[12:]...)
+	answers, truncated, err := parseDNSResponse(data)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !truncated {
+		t.Error("expected TC bit to be detected")
+	}
+	if len(answers) != 0 {
+		t.Errorf("expected 0 answers, got %d", len(answers))
+	}
+}
+
+func TestParseDNSResponse_NoTCBit(t *testing.T) {
+	q := buildQuery("example.com", 1)
+	data := make([]byte, 12, 12+len(q)-12)
+	copy(data, q[:12])
+	data[2] = 0x84
+	data[3] = 0x80
+	data = append(data, q[12:]...)
+	_, truncated, err := parseDNSResponse(data)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if truncated {
+		t.Error("expected TC bit to not be set")
+	}
+}
+
+func TestParseDNSResponse_SkipsOPT(t *testing.T) {
+	ip := net.ParseIP("1.2.3.4").To4()
+	r := buildDNSResponse(buildQuery("example.com", 1), 1, ip, 300)
+	binary.BigEndian.PutUint16(r[10:12], 1)
+	opt := []byte{0x00, 0x00, 0x29, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+	r = append(r, opt...)
+	answers, _, err := parseDNSResponse(r)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(answers) != 1 {
+		t.Fatalf("expected 1 answer (OPT should be skipped), got %d", len(answers))
+	}
+	if answers[0].rtype != 1 {
+		t.Errorf("expected A record, got type %d", answers[0].rtype)
+	}
+}
+
+func TestDNSLookup_TCPFallbackOnTruncate(t *testing.T) {
+	udpConn, err := net.ListenPacket("udp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("listen UDP: %v", err)
+	}
+	defer udpConn.Close()
+	udpAddr := udpConn.LocalAddr().(*net.UDPAddr)
+
+	tcpListener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", udpAddr.Port))
+	if err != nil {
+		t.Fatalf("listen TCP on same port: %v", err)
+	}
+	defer tcpListener.Close()
+
+	tcpAccepted := make(chan bool, 1)
+	go func() {
+		conn, err := tcpListener.Accept()
+		if err != nil {
+			return
+		}
+		tcpAccepted <- true
+		defer conn.Close()
+		lenBuf := make([]byte, 2)
+		conn.Read(lenBuf)
+		qLen := int(binary.BigEndian.Uint16(lenBuf))
+		qBuf := make([]byte, qLen)
+		conn.Read(qBuf)
+		resp := buildDNSResponse(qBuf, 1, net.ParseIP("10.0.0.1").To4(), 300)
+		binary.BigEndian.PutUint16(lenBuf, uint16(len(resp)))
+		conn.Write(lenBuf)
+		conn.Write(resp)
+	}()
+
+	go func() {
+		buf := make([]byte, 4096)
+		n, addr, _ := udpConn.ReadFrom(buf)
+		q := buf[:n]
+		qEnd := 12
+		for qEnd < len(q) && q[qEnd] != 0 {
+			qEnd += int(q[qEnd]) + 1
+		}
+		qEnd++
+		qEnd += 4
+		trunc := make([]byte, 0, qEnd)
+		trunc = append(trunc, q[:12]...)
+		trunc[2] = 0x88
+		trunc = append(trunc, q[12:qEnd]...)
+		udpConn.WriteTo(trunc, addr)
+	}()
+
+	records, err := dnsLookup("example.com", "A", udpAddr.IP.String(), udpAddr.Port)
+	if err != nil {
+		t.Fatalf("lookup failed: %v", err)
+	}
+	if len(records) != 1 || records[0].Value != "10.0.0.1" {
+		t.Errorf("unexpected result: %+v", records)
+	}
+	select {
+	case <-tcpAccepted:
+	case <-time.After(3 * time.Second):
+		t.Error("TCP fallback was not triggered")
 	}
 }

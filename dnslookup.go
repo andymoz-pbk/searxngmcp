@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"strings"
@@ -87,10 +88,12 @@ func buildQuery(name string, qtype uint16) []byte {
 	binary.BigEndian.PutUint16(header[0:2], binary.BigEndian.Uint16(id[:]))
 	binary.BigEndian.PutUint16(header[2:4], 0x0100)
 	binary.BigEndian.PutUint16(header[4:6], 1)
+	binary.BigEndian.PutUint16(header[10:12], 1)
 	question := encodeDNSName(name)
 	question = binary.BigEndian.AppendUint16(question, qtype)
 	question = binary.BigEndian.AppendUint16(question, 1)
-	return append(header, question...)
+	opt := []byte{0x00, 0x00, 0x29, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+	return append(header, append(question, opt...)...)
 }
 
 type dnsAnswer struct {
@@ -101,42 +104,48 @@ type dnsAnswer struct {
 	rdoff int // offset of rdata within the full response (for name decompression)
 }
 
-func parseDNSResponse(data []byte) ([]dnsAnswer, error) {
+func parseDNSResponse(data []byte) ([]dnsAnswer, bool, error) {
 	if len(data) < 12 {
-		return nil, fmt.Errorf("response too short")
+		return nil, false, fmt.Errorf("response too short")
 	}
+	truncated := data[2]&0x08 != 0
 	rcode := data[3] & 0x0F
 	if rcode == 3 {
-		return nil, fmt.Errorf("NXDOMAIN")
+		return nil, truncated, fmt.Errorf("NXDOMAIN")
 	}
 	if rcode != 0 {
-		return nil, fmt.Errorf("DNS response code: %d", rcode)
+		return nil, truncated, fmt.Errorf("DNS response code: %d", rcode)
 	}
 	ancount := int(binary.BigEndian.Uint16(data[6:8]))
 	offset := 12
 	if offset >= len(data) {
-		return nil, fmt.Errorf("truncated question section")
+		return nil, truncated, fmt.Errorf("truncated question section")
 	}
 	_, offset = readDNSName(data, offset)
 	if offset+4 > len(data) {
-		return nil, fmt.Errorf("truncated question type/class")
+		return nil, truncated, fmt.Errorf("truncated question type/class")
 	}
 	offset += 4
 	var answers []dnsAnswer
 	for i := 0; i < ancount; i++ {
 		if offset >= len(data) {
-			return answers, nil
+			return answers, truncated, nil
 		}
 		name, newOffset := readDNSName(data, offset)
 		if newOffset+10 > len(data) {
-			return answers, nil
+			return answers, truncated, nil
 		}
 		rtype := binary.BigEndian.Uint16(data[newOffset : newOffset+2])
+		if rtype == 41 {
+			rdlength := binary.BigEndian.Uint16(data[newOffset+8 : newOffset+10])
+			offset = newOffset + 10 + int(rdlength)
+			continue
+		}
 		ttl := binary.BigEndian.Uint32(data[newOffset+4 : newOffset+8])
 		rdlength := binary.BigEndian.Uint16(data[newOffset+8 : newOffset+10])
 		offset = newOffset + 10
 		if offset+int(rdlength) > len(data) {
-			return answers, nil
+			return answers, truncated, nil
 		}
 		rdata := data[offset : offset+int(rdlength)]
 		rdoff := offset
@@ -149,7 +158,7 @@ func parseDNSResponse(data []byte) ([]dnsAnswer, error) {
 			rdoff: rdoff,
 		})
 	}
-	return answers, nil
+	return answers, truncated, nil
 }
 
 func rdataToString(rtype uint16, rdata []byte, fullData []byte, rdoff int) (string, error) {
@@ -260,27 +269,90 @@ func reverseName(ip string) (string, error) {
 func resolveRaw(name string, qtype uint16, server string, port int) ([]DNSRecord, error) {
 	addr := net.JoinHostPort(server, fmt.Sprintf("%d", port))
 	query := buildQuery(name, qtype)
+
+	var answers []dnsAnswer
+	var resp []byte
+
+	// Try UDP first
 	conn, err := net.DialTimeout("udp", addr, 5*time.Second)
 	if err != nil {
 		return nil, fmt.Errorf("connection failed: %w", err)
 	}
-	defer conn.Close()
 	conn.SetDeadline(time.Now().Add(5 * time.Second))
 	if _, err := conn.Write(query); err != nil {
+		conn.Close()
 		return nil, fmt.Errorf("write failed: %w", err)
 	}
-	resp := make([]byte, 4096)
-	n, err := conn.Read(resp)
+	udpResp := make([]byte, 4096)
+	n, err := conn.Read(udpResp)
+	conn.Close()
 	if err != nil {
 		return nil, fmt.Errorf("read failed: %w", err)
 	}
-	answers, err := parseDNSResponse(resp[:n])
+	resp = udpResp[:n]
+	answers, truncated, err := parseDNSResponse(resp)
 	if err != nil {
 		return nil, err
 	}
+
+	// If truncated, retry over TCP
+	if truncated {
+		tcpAnswers, tcpResp, tcpErr := resolveRawTCP(name, qtype, server, port)
+		if tcpErr == nil {
+			answers = tcpAnswers
+			resp = tcpResp
+		}
+	}
+
+	return answersToRecords(answers, resp, name), nil
+}
+
+func resolveRawTCP(name string, qtype uint16, server string, port int) ([]dnsAnswer, []byte, error) {
+	addr := net.JoinHostPort(server, fmt.Sprintf("%d", port))
+	query := buildQuery(name, qtype)
+
+	conn, err := net.DialTimeout("tcp", addr, 5*time.Second)
+	if err != nil {
+		return nil, nil, fmt.Errorf("TCP connection failed: %w", err)
+	}
+	defer conn.Close()
+	conn.SetDeadline(time.Now().Add(5 * time.Second))
+
+	// Write length-prefixed query
+	lenBuf := make([]byte, 2)
+	binary.BigEndian.PutUint16(lenBuf, uint16(len(query)))
+	if _, err := conn.Write(lenBuf); err != nil {
+		return nil, nil, fmt.Errorf("TCP write length failed: %w", err)
+	}
+	if _, err := conn.Write(query); err != nil {
+		return nil, nil, fmt.Errorf("TCP write failed: %w", err)
+	}
+
+	// Read length prefix
+	if _, err := io.ReadFull(conn, lenBuf); err != nil {
+		return nil, nil, fmt.Errorf("TCP read length failed: %w", err)
+	}
+	respLen := int(binary.BigEndian.Uint16(lenBuf))
+	if respLen == 0 || respLen > 65535 {
+		return nil, nil, fmt.Errorf("invalid TCP response length: %d", respLen)
+	}
+
+	resp := make([]byte, respLen)
+	if _, err := io.ReadFull(conn, resp); err != nil {
+		return nil, nil, fmt.Errorf("TCP read failed: %w", err)
+	}
+
+	answers, _, err := parseDNSResponse(resp)
+	if err != nil {
+		return nil, nil, err
+	}
+	return answers, resp, nil
+}
+
+func answersToRecords(answers []dnsAnswer, resp []byte, name string) []DNSRecord {
 	var records []DNSRecord
 	for _, a := range answers {
-		value, err := rdataToString(a.rtype, a.rdata, resp[:n], a.rdoff)
+		value, err := rdataToString(a.rtype, a.rdata, resp, a.rdoff)
 		if err != nil {
 			continue
 		}
@@ -295,7 +367,7 @@ func resolveRaw(name string, qtype uint16, server string, port int) ([]DNSRecord
 			TTL:   int(a.ttl),
 		})
 	}
-	return records, nil
+	return records
 }
 
 func dnsLookup(name string, rtype string, server string, port int) ([]DNSRecord, error) {
