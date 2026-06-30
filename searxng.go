@@ -36,7 +36,7 @@ type SearXNGResponse struct {
 	Query               string          `json:"query"`
 	NumberOfResults     int             `json:"number_of_results"`
 	Results             []SearXNGResult `json:"results"`
-	Answers             []string        `json:"answers"`
+	Answers             []any           `json:"answers"`
 	Corrections         []string        `json:"corrections"`
 	Suggestions         []string        `json:"suggestions"`
 	Infoboxes           []any           `json:"infoboxes"`
