@@ -29,7 +29,7 @@ func TestSearXNGClient_Search_Success(t *testing.T) {
 				{Title: "Result A", URL: "https://a.example", Content: "snippet a", Engine: "google", Score: 0.95, Category: "general"},
 				{Title: "Result B", URL: "https://b.example", Content: "snippet b", Engine: "bing", Score: 0.80, Category: "general"},
 			},
-			Answers:             []string{"answer 1"},
+			Answers:             []any{"answer 1"},
 			Corrections:         []string{"did you mean X"},
 			Suggestions:         []string{"suggestion 1"},
 			UnresponsiveEngines: []any{[]any{"engine1", "timeout"}},
