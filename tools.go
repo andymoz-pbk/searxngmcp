@@ -56,9 +56,9 @@ type ExternalResource struct {
 	URL  string `json:"url"`
 }
 
-var searchTool = Tool{
-	Name:        "searxng_search",
-	Description: "Search the web using SearXNG metasearch engine. Returns JSON results with titles, URLs, snippets, engines, and scores.",
+	var searchTool = Tool{
+		Name:        "searxng_search",
+		Description: "Search the web using SearXNG metasearch engine. Returns JSON results with titles, URLs, snippets, engines, and scores. When using time_range, call get_datetime first to know the current date, as your training data may have a stale sense of the current date.",
 	InputSchema: InputSchema{
 		Type: "object",
 		Properties: map[string]PropertyDef{
@@ -83,7 +83,7 @@ var searchTool = Tool{
 			},
 			"time_range": {
 				Type:        "string",
-				Description: "Time range filter: day, week, month, year. Empty for no filter.",
+				Description: "Time range filter: day, week, month, year. Empty for no filter. Call get_datetime first to know the current date before using relative time filters.",
 				Default:     "",
 			},
 			"safesearch": {
@@ -163,7 +163,7 @@ var fetchTool = Tool{
 
 var datetimeTool = Tool{
 	Name:        "get_datetime",
-	Description: "Get the current date, time, timezone, and timestamp information. Returns all common date/time representations in a single JSON response.",
+	Description: "Get the current date, time, timezone, and timestamp information. Returns all common date/time representations in a single JSON response. IMPORTANT: Call this tool before any date-sensitive operations (searches with time_range, news, etc.) because your training data may have a stale sense of the current date.",
 	InputSchema: InputSchema{
 		Type: "object",
 		Properties: map[string]PropertyDef{
@@ -280,9 +280,9 @@ var randomStringTool = Tool{
 	},
 }
 
-var newsSearchTool = Tool{
-	Name:        "searxng_search_news",
-	Description: "Search news using SearXNG. Shortcut for search with category=news and time_range=week. Returns JSON results with titles, URLs, snippets, engines, and scores.",
+	var newsSearchTool = Tool{
+		Name:        "searxng_search_news",
+		Description: "Search news using SearXNG. Shortcut for search with category=news and time_range=week. Returns JSON results with titles, URLs, snippets, engines, and scores. Call get_datetime first to know the current date, as your training data may have a stale sense of the current date.",
 	InputSchema: InputSchema{
 		Type: "object",
 		Properties: map[string]PropertyDef{
@@ -302,7 +302,7 @@ var newsSearchTool = Tool{
 			},
 			"time_range": {
 				Type:        "string",
-				Description: "Time range filter: day, week, month, year. Empty for no filter.",
+				Description: "Time range filter: day, week, month, year. Empty for no filter. Call get_datetime first to know the current date before using relative time filters.",
 				Default:     "week",
 			},
 			"safesearch": {
